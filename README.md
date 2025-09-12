@@ -61,8 +61,8 @@ Sistema completo de agendamento online construído com **NestJS**, **Prisma**, *
 
 ### 1. Clone o repositório
 ```bash
-git clone <seu-repositorio>
-cd online-scheduling-system/backend
+git clone https://github.com/IcaroWil/TCC-backend.git
+cd TCC-backend
 ```
 
 ### 2. Instale as dependências
