@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, Matches } from 'class-validator';
+import { IsNotEmpty, IsNumber, Matches } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateScheduleDto {
+  @ApiProperty({ description: 'Service ID' })
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  serviceId: number;
+
   @ApiProperty({ description: 'ISO date string (e.g., 2025-12-31T00:00:00.000Z)' })
   @IsNotEmpty()
   date: string;
