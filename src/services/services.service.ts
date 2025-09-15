@@ -78,7 +78,7 @@ export class ServicesService {
             serviceId: (schedule as any).serviceId,
             date: (schedule as any).date,
             startTime: (schedule as any).startTime
-          }
+          } as any
         });
 
         if (!existing) {
@@ -93,7 +93,7 @@ export class ServicesService {
             data: {
               endTime: (schedule as any).endTime,
               isAvailable: true
-            }
+            } as any
           });
           createdSchedules.push(updated);
         }
