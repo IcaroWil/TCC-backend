@@ -37,15 +37,22 @@ export class SchedulesService {
     }
     return this.prisma.schedule.create({
       data: {
+        serviceId: createScheduleDto.serviceId,
         date: new Date(createScheduleDto.date),
         startTime: createScheduleDto.startTime,
         endTime: createScheduleDto.endTime,
-      },
+        isAvailable: true,
+      } as any,
     });
   }
 
   async findAll(filter?: { serviceId?: number; date?: string; available?: boolean }) {
     const where: any = {};
+    
+    if (filter?.serviceId) {
+      where.serviceId = filter.serviceId;
+    }
+    
     if (filter?.date) {
       const day = parseDateOnly(filter.date);
       if (!day) {
@@ -55,12 +62,26 @@ export class SchedulesService {
       next.setDate(next.getDate() + 1);
       where.date = { gte: day, lt: next };
     }
+    
     if (filter?.available === true) {
+      where.isAvailable = true;
       where.appointments = { none: {} };
     }
+    
     return this.prisma.schedule.findMany({
       where,
-      include: { appointments: true },
+      include: { 
+        service: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            duration: true,
+          }
+        },
+        appointments: true 
+      } as any,
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
     });
   }

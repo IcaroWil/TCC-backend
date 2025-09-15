@@ -1,11 +1,12 @@
 import { Controller, Post, Body, Get, Param, Patch, Delete, UseGuards, ParseIntPipe, Query } from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 
+@ApiTags('Schedules')
 @Controller('schedules')
 export class SchedulesController {
   constructor(private schedulesService: SchedulesService) {}
@@ -19,6 +20,10 @@ export class SchedulesController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all schedules' })
+  @ApiQuery({ name: 'serviceId', required: false, description: 'Filter by service ID' })
+  @ApiQuery({ name: 'date', required: false, description: 'Filter by date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'available', required: false, description: 'Filter only available slots', type: Boolean })
   findAll(
     @Query('serviceId') serviceId?: string,
     @Query('date') date?: string,
