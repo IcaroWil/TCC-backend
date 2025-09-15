@@ -36,7 +36,7 @@ export class AppointmentsService {
     });
 
     const customerEmail = appointment.user.email;
-    const adminEmail = process.env.ADMIN_EMAIL || 'icarofaria11@gmail.com';
+    const notifyAdmin = (process.env.ADMIN_NOTIFICATIONS_ENABLED ?? 'true') !== 'false';
     const serviceName = appointment.service.name;
     const serviceDescription = appointment.service.description;
     const servicePrice = appointment.service.price;
@@ -45,7 +45,7 @@ export class AppointmentsService {
     const dateStr = dateIso ? new Date(dateIso).toLocaleDateString('pt-BR') : '';
     const timeSlot = `${appointment.schedule.startTime} - ${appointment.schedule.endTime}`;
     
-    // Criar links para adicionar ao calendário
+
     const startDateTime = new Date(dateIso);
     const [startHour, startMinute] = appointment.schedule.startTime.split(':');
     const [endHour, endMinute] = appointment.schedule.endTime.split(':');
@@ -54,7 +54,6 @@ export class AppointmentsService {
     const endDateTime = new Date(startDateTime);
     endDateTime.setHours(parseInt(endHour), parseInt(endMinute), 0, 0);
     
-    // Formatar datas para os links de calendário
     const formatDateForCalendar = (date: Date) => {
       return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     };
@@ -62,16 +61,13 @@ export class AppointmentsService {
     const startDateFormatted = formatDateForCalendar(startDateTime);
     const endDateFormatted = formatDateForCalendar(endDateTime);
     
-    // Título e descrição do evento
     const eventTitle = `${serviceName} - Agendamento`;
     const eventDescription = `${serviceDescription || ''}\n\nValor: R$ ${servicePrice.toFixed(2)}\n\nSistema de Agendamento Online`;
     
-    // Links para diferentes calendários
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${startDateFormatted}/${endDateFormatted}&details=${encodeURIComponent(eventDescription)}`;
     const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(eventTitle)}&startdt=${startDateTime.toISOString()}&enddt=${endDateTime.toISOString()}&body=${encodeURIComponent(eventDescription)}`;
     const appleUrl = `data:text/calendar;charset=utf8,BEGIN:VCALENDAR%0AVERSION:2.0%0ABEGIN:VEVENT%0ADTSTART:${startDateFormatted}%0ADTEND:${endDateFormatted}%0ASUMMARY:${encodeURIComponent(eventTitle)}%0ADESCRIPTION:${encodeURIComponent(eventDescription)}%0AEND:VEVENT%0AEND:VCALENDAR`;
     
-    // Template para o cliente
     const customerEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
@@ -113,7 +109,6 @@ export class AppointmentsService {
       </div>
     `;
 
-    // Template para o admin
     const adminEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: #e74c3c; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
@@ -148,14 +143,15 @@ export class AppointmentsService {
     if (customerEmail) {
       await this.notificationService.sendEmail(customerEmail, '✅ Agendamento Confirmado', customerEmailHtml);
     }
-    if (adminEmail) {
-      await this.notificationService.sendEmail(adminEmail, '🔔 Novo Agendamento Recebido', adminEmailHtml);
+    if (notifyAdmin) {
+      const admins = await this.prisma.user.findMany({ where: { role: 'ADMIN' }, select: { email: true } });
+      for (const a of admins) {
+        if (a.email) {
+          await this.notificationService.sendEmail(a.email, '🔔 Novo Agendamento Recebido', adminEmailHtml);
+        }
+      }
     }
-    // WhatsApp temporariamente desabilitado - aguardando aprovação do Twilio
-    // const customerPhone = appointment.user.phone;
-    // if (customerPhone) {
-    //   await this.notificationService.sendWhatsApp(customerPhone, `Your ${serviceName} on ${when} is confirmed.`);
-    // }
+    // WhatsApp desabilitado (somente e-mail ativo)
 
     return appointment;
   }

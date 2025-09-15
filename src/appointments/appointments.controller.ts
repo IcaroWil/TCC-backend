@@ -6,7 +6,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 
-@ApiTags('appointments')
+@ApiTags('Appointments')
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private appointmentsService: AppointmentsService) {}
@@ -26,7 +26,6 @@ export class AppointmentsController {
   async create(@Request() req, @Body() dto: CreateAppointmentDto) {
     const appointment = await this.appointmentsService.create(req.user.userId ?? req.user.id, dto);
     
-    // Sempre retornar o agendamento, mas incluir link do calendário apenas com consentimento
     const response: any = {
       ...appointment,
       message: dto.addToCalendar 
@@ -34,7 +33,6 @@ export class AppointmentsController {
         : "Agendamento criado com sucesso! Verifique seu email para adicionar ao calendário."
     };
 
-    // Só incluir link do calendário se usuário consentir explicitamente
     if (dto.addToCalendar) {
       const startDateTime = new Date(appointment.schedule.date);
       const [startHour, startMinute] = appointment.schedule.startTime.split(':');
@@ -54,7 +52,7 @@ export class AppointmentsController {
       const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${formatDateForCalendar(startDateTime)}/${formatDateForCalendar(endDateTime)}&details=${encodeURIComponent(eventDescription)}`;
       
       response.calendarUrl = googleCalendarUrl;
-      response.calendarDirect = true; // Indica que foi gerado com consentimento
+      response.calendarDirect = true;
     }
 
     return response;
