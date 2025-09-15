@@ -26,14 +26,11 @@ Sistema completo de agendamento online construído com **NestJS**, **Prisma**, *
 - Status de agendamento (PENDING, CONFIRMED, CANCELLED)
 
 ### ✅ **Notificações**
-- **Email**: Confirmação para cliente e notificação para admin
-- **WhatsApp**: Via Twilio (opcional)
-- **Templates HTML**: Profissionais e responsivos
+- **Email**: Confirmação para cliente e notificação para admin (Nodemailer/Gmail SMTP)
+- **Templates HTML**: Profissionais, responsivos e com links de calendário
 
 ### ✅ **Integração com Calendários**
-- Google Calendar
-- Outlook
-- Apple Calendar
+- Links para Google/Outlook e anexo ICS (Apple)
 - **LGPD Compliant**: Consentimento explícito
 
 ### ✅ **API Documentation**
@@ -47,7 +44,6 @@ Sistema completo de agendamento online construído com **NestJS**, **Prisma**, *
 - **Database**: PostgreSQL + Prisma ORM
 - **Authentication**: JWT
 - **Email**: Nodemailer + Gmail SMTP
-- **WhatsApp**: Twilio API
 - **Validation**: class-validator
 - **Documentation**: Swagger/OpenAPI
 
@@ -91,10 +87,8 @@ SMTP_PORT=587
 EMAIL_USER="your-email@gmail.com"
 EMAIL_PASS="your-app-password"
 
-# WhatsApp (Twilio) - Opcional
-TWILIO_ACCOUNT_SID="your-twilio-account-sid"
-TWILIO_AUTH_TOKEN="your-twilio-auth-token"
-TWILIO_PHONE_NUMBER="your-twilio-phone-number"
+# (Opcional) N8N para orquestração de WhatsApp (desabilitado)
+# N8N_WHATSAPP_WEBHOOK_URL="https://seu-n8n/webhook/agendamento-online"
 
 # CORS
 CORS_ORIGIN="http://localhost:3000,http://localhost:3001"
@@ -201,12 +195,10 @@ Authorization: Bearer <seu-token>
 2. Gere uma senha de app: https://myaccount.google.com/apppasswords
 3. Use a senha de 16 caracteres no `EMAIL_PASS`
 
-## 📱 Configuração WhatsApp (Opcional)
+## 📱 WhatsApp (Opcional)
 
-### Twilio
-1. Crie conta em: https://www.twilio.com/
-2. Configure um número para WhatsApp
-3. Adicione as credenciais no `.env`
+Neste momento, o envio por WhatsApp está desabilitado no backend.
+Se desejar orquestrar via n8n no futuro, habilite a variável `N8N_WHATSAPP_WEBHOOK_URL` e implemente o fluxo no n8n.
 
 ## 🗓️ Integração com Calendários
 
@@ -281,11 +273,7 @@ docker run -p 3000:3000 scheduling-backend
 - Configure `DATABASE_URL` para seu banco de produção
 - Use `JWT_SECRET` forte e único
 - Configure `CORS_ORIGIN` para seus domínios
-- Configure credenciais de email/WhatsApp
-
-## 📝 Licença
-
-MIT License
+- Configure credenciais de email
 
 ## 🤝 Contribuição
 
