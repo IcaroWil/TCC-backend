@@ -19,7 +19,7 @@ export class PublicService {
         description: true,
         price: true,
         duration: true,
-      },
+      } as any,
       orderBy: { name: 'asc' }
     });
   }
@@ -52,7 +52,7 @@ export class PublicService {
 
     return this.prisma.schedule.findMany({
       where,
-      include: { 
+      include: {
         service: {
           select: {
             id: true,
@@ -60,10 +60,10 @@ export class PublicService {
             description: true,
             price: true,
             duration: true,
-          }
+          } as any
         },
-        appointments: true 
-      },
+        appointments: true
+      } as any,
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
     });
   }
@@ -88,11 +88,11 @@ export class PublicService {
       throw new NotFoundException('Schedule not found');
     }
 
-    if (schedule.serviceId !== serviceId) {
+    if ((schedule as any).serviceId !== serviceId) {
       throw new BadRequestException('Schedule does not belong to the specified service');
     }
 
-    if (!schedule.isAvailable || schedule.appointments.length > 0) {
+    if (!(schedule as any).isAvailable || schedule.appointments.length > 0) {
       throw new ConflictException('This time slot is no longer available');
     }
 
