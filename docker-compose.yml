@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: timelyfy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: timelyfy
+      POSTGRES_USER: timelyfy_user
+      POSTGRES_PASSWORD: timelyfy_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - timelyfy-network
+
+  # Redis (opcional, para cache e sessões)
+  redis:
+    image: redis:7-alpine
+    container_name: timelyfy-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - timelyfy-network
+
+  # Aplicação (para desenvolvimento)
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: timelyfy-api-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: "postgresql://timelyfy_user:timelyfy_password@postgres:5432/timelyfy?schema=public"
+      JWT_SECRET: "dev-secret-change-in-production"
+      CORS_ORIGIN: "http://localhost:3000"
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - timelyfy-network
+    profiles:
+      - dev
+
+  # Aplicação (para produção)
+  app-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: timelyfy-api-prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://timelyfy_user:timelyfy_password@postgres:5432/timelyfy?schema=public"
+      JWT_SECRET: "${JWT_SECRET}"
+      CORS_ORIGIN: "${CORS_ORIGIN}"
+      PORT: 3001
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASS: "${SMTP_PASS}"
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - timelyfy-network
+    profiles:
+      - prod
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  timelyfy-network:
+    driver: bridge

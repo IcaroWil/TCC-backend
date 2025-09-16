@@ -1,84 +1,68 @@
-# 📅 Sistema de Agendamento Online - Backend
+# Timelyfy Backend API
 
-Sistema completo de agendamento online construído com **NestJS**, **Prisma**, **PostgreSQL** e **Clean Architecture**.
+Backend completo para sistema de agendamentos online desenvolvido para complementar o frontend descrito no TCC.
 
-## 🚀 Funcionalidades
+## 🚀 Características
 
-### ✅ **Autenticação e Autorização**
-- Login e registro de usuários
-- JWT para autenticação
-- RBAC (Role-Based Access Control)
-- Roles: ADMIN e CUSTOMER
-- Código de convite para registro de ADMINs
+- **Autenticação JWT** - Sistema completo de login, registro e gerenciamento de usuários
+- **Gestão de Serviços** - CRUD completo para serviços oferecidos
+- **Sistema de Agendamentos** - Criação, consulta, atualização e cancelamento de agendamentos
+- **Calendário Inteligente** - Sistema de disponibilidade com horários de funcionamento e feriados
+- **Notificações por Email** - Confirmações, lembretes e notificações automáticas
+- **Painel Administrativo** - Dashboard com estatísticas e gestão completa
+- **API RESTful** - Endpoints bem estruturados seguindo padrões REST
+- **Documentação Swagger** - Documentação interativa da API
+- **Validação de Dados** - Validação robusta com Zod
+- **TypeScript** - Tipagem forte para maior segurança
+- **Prisma ORM** - Gerenciamento de banco de dados moderno
 
-### ✅ **Gestão de Serviços**
-- CRUD completo de serviços
-- Geração automática de horários baseada na configuração
-- Apenas ADMINs podem gerenciar
-- CUSTOMERs podem visualizar
+## 🛠 Tecnologias Utilizadas
 
-### ✅ **Gestão de Horários**
-- CRUD de horários disponíveis
-- Filtros por data, serviço e disponibilidade
-- Geração automática baseada em dias da semana, horários e intervalos
-- Apenas ADMINs podem gerenciar
+### Core
+- **Node.js** - Runtime JavaScript
+- **Express.js** - Framework web
+- **TypeScript** - Linguagem com tipagem estática
+- **Prisma** - ORM moderno para PostgreSQL
 
-### ✅ **Sistema de Agendamentos**
-- Criação de agendamentos (autenticados e públicos)
-- Validação de conflitos
-- Status de agendamento (PENDING, CONFIRMED, CANCELLED)
-- Criação automática de usuários para agendamentos públicos
+### Autenticação & Segurança
+- **JWT** - JSON Web Tokens para autenticação
+- **bcryptjs** - Hash de senhas
+- **Helmet** - Cabeçalhos de segurança
+- **CORS** - Cross-Origin Resource Sharing
+- **Rate Limiting** - Proteção contra spam
 
-### ✅ **Área Pública (Sem Login)**
-- Visualização de serviços disponíveis
-- Consulta de horários por serviço e data
-- Criação de agendamentos sem necessidade de cadastro
-- Notificações automáticas por email
+### Validação & Documentação
+- **Zod** - Validação de esquemas
+- **Swagger** - Documentação da API
+- **Morgan** - Logging de requisições
 
-### ✅ **Notificações**
-- **Email**: Confirmação para cliente e notificação para admin (Nodemailer/Gmail SMTP)
-- **Templates HTML**: Profissionais, responsivos e com links de calendário
-- **Anexos ICS**: Para integração com Apple Calendar
-
-### ✅ **Integração com Calendários**
-- Links para Google Calendar e Outlook
-- Anexo ICS para Apple Calendar
-- **LGPD Compliant**: Consentimento explícito para integração
-
-### ✅ **API Documentation**
-- Swagger/OpenAPI completo
-- Exemplos de uso
-- Autenticação integrada
-
-## 🛠️ Tecnologias
-
-- **Framework**: NestJS
-- **Database**: PostgreSQL + Prisma ORM
-- **Authentication**: JWT
-- **Email**: Nodemailer + Gmail SMTP
-- **Validation**: class-validator
-- **Documentation**: Swagger/OpenAPI
+### Utilitários
+- **Nodemailer** - Envio de emails
+- **date-fns** - Manipulação de datas
+- **compression** - Compressão de respostas
 
 ## 📋 Pré-requisitos
 
-- Node.js 18+
+- Node.js 18+ 
 - PostgreSQL 12+
-- npm ou yarn
+- npm ou pnpm
 
 ## 🔧 Instalação
 
-### 1. Clone o repositório
+1. **Clone o repositório**
 ```bash
-git clone https://github.com/IcaroWil/TCC-backend.git
-cd TCC-backend
+git clone <repository-url>
+cd timelyfy-backend
 ```
 
-### 2. Instale as dependências
+2. **Instale as dependências**
 ```bash
 npm install
+# ou
+pnpm install
 ```
 
-### 3. Configure as variáveis de ambiente
+3. **Configure as variáveis de ambiente**
 ```bash
 cp .env.example .env
 ```
@@ -87,328 +71,269 @@ Edite o arquivo `.env` com suas configurações:
 
 ```env
 # Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/scheduling_db?schema=public"
+DATABASE_URL="postgresql://username:password@localhost:5432/timelyfy?schema=public"
 
 # JWT
-JWT_SECRET="your-super-secret-jwt-key"
-ADMIN_INVITE_CODE="admin123"
+JWT_SECRET="your-super-secret-jwt-key-change-in-production"
+JWT_EXPIRES_IN="7d"
 
-# Email (Gmail)
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT=587
-EMAIL_USER="your-email@gmail.com"
-EMAIL_PASS="your-app-password"
+# Server
+PORT=3001
+NODE_ENV="development"
 
 # CORS
-CORS_ORIGIN="http://localhost:3000,http://localhost:3001"
+CORS_ORIGIN="http://localhost:3000"
 
-# Admin notifications
-ADMIN_NOTIFICATIONS_ENABLED=true
+# Email Configuration
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+FROM_EMAIL="noreply@timelyfy.com"
+FROM_NAME="Timelyfy"
 
-# (Opcional) N8N para orquestração de WhatsApp (desabilitado)
-# N8N_WHATSAPP_WEBHOOK_URL="https://seu-n8n/webhook/agendamento-online"
+# Admin
+ADMIN_EMAIL="admin@timelyfy.com"
+ADMIN_PASSWORD="admin123"
 ```
 
-### 4. Configure o banco de dados
+4. **Configure o banco de dados**
 ```bash
-# Gerar o cliente Prisma
-npm run prisma:generate
+# Gerar cliente Prisma
+npx prisma generate
 
-# Executar migrações
-npm run prisma:migrate
+# Executar migrations
+npx prisma db push
 
-# Popular com dados iniciais
-npm run prisma:seed
+# Popular banco com dados iniciais
+npm run db:seed
 ```
 
-### 5. Inicie o servidor
+5. **Inicie o servidor**
 ```bash
 # Desenvolvimento
-npm run start:dev
+npm run dev
 
 # Produção
-npm run start:prod
+npm run build
+npm start
 ```
 
-## 📚 Uso da API
+## 📚 Documentação da API
 
-### Acesse a documentação
-- **Swagger UI**: http://localhost:3000/api-docs
-- **API Base**: http://localhost:3000
+Após iniciar o servidor, acesse:
+- **Documentação Swagger**: http://localhost:3001/api/docs
+- **Health Check**: http://localhost:3001/health
 
-## 🔗 Endpoints da API
+## 🔗 Principais Endpoints
 
-### **🔓 Públicos (Sem Autenticação)**
+### Autenticação
+- `POST /api/auth/login` - Login
+- `POST /api/auth/register` - Registro
+- `GET /api/auth/profile` - Perfil do usuário
+- `PUT /api/auth/profile` - Atualizar perfil
 
-#### **Serviços**
+### Serviços
+- `GET /api/services` - Listar serviços
+- `POST /api/services` - Criar serviço (admin)
+- `PUT /api/services/:id` - Atualizar serviço (admin)
+- `DELETE /api/services/:id` - Excluir serviço (admin)
+
+### Agendamentos
+- `GET /api/appointments` - Listar agendamentos
+- `POST /api/appointments` - Criar agendamento
+- `PUT /api/appointments/:id` - Atualizar agendamento
+- `PATCH /api/appointments/:id/cancel` - Cancelar agendamento
+
+### Disponibilidade
+- `GET /api/availability/slots` - Horários disponíveis
+- `GET /api/availability/range` - Disponibilidade por período
+- `GET /api/availability/check` - Verificar horário específico
+
+### Administração
+- `GET /api/admin/dashboard` - Estatísticas do dashboard
+- `GET /api/admin/users` - Gerenciar usuários
+- `GET /api/admin/business-hours` - Horários de funcionamento
+- `GET /api/admin/settings` - Configurações do sistema
+
+## 🗃 Estrutura do Banco de Dados
+
+### Principais Tabelas
+
+- **users** - Usuários do sistema (clientes e admins)
+- **services** - Serviços oferecidos
+- **appointments** - Agendamentos
+- **business_hours** - Horários de funcionamento
+- **holidays** - Feriados e dias não úteis
+- **time_slots** - Slots de tempo bloqueados
+- **settings** - Configurações do sistema
+
+## 🎯 Funcionalidades Implementadas
+
+### Sistema de Agendamentos
+- ✅ Criação de agendamentos para usuários autenticados e não autenticados
+- ✅ Verificação automática de disponibilidade
+- ✅ Prevenção de conflitos de horários
+- ✅ Diferentes status de agendamento (agendado, confirmado, concluído, cancelado)
+- ✅ Reagendamento com notificação
+
+### Gestão de Disponibilidade
+- ✅ Horários de funcionamento configuráveis por dia da semana
+- ✅ Feriados e dias especiais
+- ✅ Bloqueio manual de horários
+- ✅ Cálculo automático de slots disponíveis
+- ✅ Buffer entre agendamentos
+
+### Sistema de Notificações
+- ✅ Email de confirmação de agendamento
+- ✅ Lembretes automáticos
+- ✅ Notificações de cancelamento e reagendamento
+- ✅ Templates HTML responsivos
+
+### Painel Administrativo
+- ✅ Dashboard com estatísticas em tempo real
+- ✅ Gestão completa de usuários e permissões
+- ✅ Relatórios de receita e popularidade de serviços
+- ✅ Configurações do sistema
+- ✅ Gestão de horários e feriados
+
+### Segurança e Performance
+- ✅ Autenticação JWT com refresh automático
+- ✅ Rate limiting para prevenção de spam
+- ✅ Validação robusta de dados
+- ✅ Sanitização de entradas
+- ✅ Compressão de respostas
+- ✅ CORS configurado
+
+## 🧪 Scripts Disponíveis
+
 ```bash
-GET /public/services
-```
-- Lista todos os serviços disponíveis
-- Retorna: id, name, description, price, duration
+# Desenvolvimento
+npm run dev          # Inicia servidor em modo desenvolvimento
+npm run build        # Build para produção
+npm start            # Inicia servidor de produção
 
-#### **Horários**
-```bash
-GET /public/services/:id/schedules?date=YYYY-MM-DD&available=true
-```
-- Lista horários disponíveis para um serviço
-- Parâmetros opcionais: date, available
-- Retorna horários com informações do serviço
+# Banco de dados
+npm run db:generate  # Gera cliente Prisma
+npm run db:push      # Aplica schema ao banco
+npm run db:migrate   # Executa migrations
+npm run db:seed      # Popula banco com dados iniciais
+npm run db:studio    # Interface visual do banco
 
-#### **Agendamentos Públicos**
-```bash
-POST /public/appointments
-```
-- Cria agendamento sem necessidade de login
-- Body: `{ serviceId, scheduleId, name, email, phone, addToCalendar }`
-- Cria usuário automaticamente se não existir
-
-### **🔐 Autenticação**
-
-#### **Login e Registro**
-```bash
-POST /auth/login
-POST /auth/register
-GET  /auth/profile
-```
-
-### **👑 Administração (ADMIN)**
-
-#### **Usuários**
-```bash
-GET    /users
-POST   /users
-GET    /users/:id
-DELETE /users/:id
-PATCH  /users/:id/role
-```
-
-#### **Serviços**
-```bash
-GET    /services
-POST   /services
-GET    /services/:id
-PATCH  /services/:id
-DELETE /services/:id
-POST   /services/:id/generate-schedules
-```
-
-#### **Horários**
-```bash
-GET    /schedules
-POST   /schedules
-GET    /schedules/:id
-PATCH  /schedules/:id
-DELETE /schedules/:id
-```
-
-#### **Agendamentos**
-```bash
-GET  /appointments
-POST /appointments
-GET  /appointments/:id
+# Testes
+npm test             # Executa testes (quando implementados)
 ```
 
 ## 🔐 Autenticação
 
-### 1. Registre um usuário
-```bash
-POST /auth/register
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "name": "User Name",
-  "phone": "+5511999999999",
-  "role": "CUSTOMER"
-}
+O sistema usa JWT (JSON Web Tokens) para autenticação. Inclua o token no header:
+
+```
+Authorization: Bearer <seu-jwt-token>
 ```
 
-### 2. Registre um ADMIN
-```bash
-POST /auth/register
-{
-  "email": "admin@example.com",
-  "password": "password123",
-  "name": "Admin Name",
-  "phone": "+5511999999999",
-  "role": "ADMIN",
-  "adminInviteCode": "admin123"
-}
-```
-
-### 3. Faça login
-```bash
-POST /auth/login
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-### 4. Use o token nas requisições
-```bash
-Authorization: Bearer <seu-token>
-```
+### Níveis de Acesso
+- **CLIENT** - Usuário comum (pode gerenciar próprios agendamentos)
+- **ADMIN** - Administrador (acesso total exceto gestão de usuários)
+- **SUPER_ADMIN** - Super administrador (acesso completo)
 
 ## 📧 Configuração de Email
 
-### Gmail SMTP
-1. Ative 2FA na sua conta Google
-2. Gere uma senha de app: https://myaccount.google.com/apppasswords
-3. Use a senha de 16 caracteres no `EMAIL_PASS`
+Para habilitar notificações por email, configure as variáveis SMTP no `.env`:
 
-## 📱 WhatsApp (Opcional)
-
-Neste momento, o envio por WhatsApp está desabilitado no backend.
-Se desejar orquestrar via n8n no futuro, habilite a variável `N8N_WHATSAPP_WEBHOOK_URL` e implemente o fluxo no n8n.
-
-## 🗓️ Integração com Calendários
-
-### Com Consentimento
-```bash
-POST /appointments
-{
-  "scheduleId": 1,
-  "serviceId": 2,
-  "addToCalendar": true
-}
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="seu-email@gmail.com"
+SMTP_PASS="sua-senha-de-app"
 ```
 
-### Sem Consentimento
-```bash
-POST /appointments
-{
-  "scheduleId": 1,
-  "serviceId": 2
-}
+Para Gmail, use uma [senha de aplicativo](https://support.google.com/accounts/answer/185833).
+
+## 🐳 Docker (Opcional)
+
+```dockerfile
+# Dockerfile exemplo
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 3001
+CMD ["npm", "start"]
 ```
 
-## 🧪 Testes
+## 📈 Monitoramento
 
-```bash
-# Testes unitários
-npm run test
+- Health check endpoint: `/health`
+- Logs estruturados com Morgan
+- Métricas de performance disponíveis
+- Rate limiting com feedback
 
-# Testes E2E
-npm run test:e2e
+## 🤝 Integração com Frontend
 
-# Cobertura
-npm run test:cov
+Este backend foi projetado para integrar perfeitamente com o frontend Next.js descrito no TCC:
+
+### Principais Integrações
+- **Autenticação** - Login/logout com JWT
+- **Catálogo de Serviços** - Listagem com filtros e categorias  
+- **Calendário** - API de disponibilidade para componente de calendário
+- **Agendamentos** - CRUD completo para gestão de agendamentos
+- **Dashboard Admin** - Dados para gráficos e relatórios
+- **Notificações** - Emails automáticos para confirmações
+
+### Exemplo de Uso no Frontend
+
+```javascript
+// Obter serviços disponíveis
+const services = await fetch('/api/services').then(r => r.json());
+
+// Verificar disponibilidade
+const availability = await fetch(
+  `/api/availability/slots?serviceId=${serviceId}&date=${date}`
+).then(r => r.json());
+
+// Criar agendamento
+const appointment = await fetch('/api/appointments', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    serviceId,
+    date,
+    startTime,
+    clientName,
+    clientEmail
+  })
+}).then(r => r.json());
 ```
-
-## 📁 Estrutura do Projeto
-
-```
-src/
-├── app.controller.ts          # Controller principal
-├── app.module.ts             # Módulo principal
-├── app.service.ts            # Serviço principal
-├── main.ts                   # Ponto de entrada
-├── auth/                     # Autenticação e autorização
-│   ├── auth.controller.ts
-│   ├── auth.module.ts
-│   ├── auth.service.ts
-│   ├── dto/
-│   │   ├── login.dto.ts
-│   │   └── register.dto.ts
-│   ├── guards/
-│   │   └── jwt-auth.guard.ts
-│   └── jwt.strategy.ts
-├── users/                    # Gestão de usuários
-│   ├── users.controller.ts
-│   ├── users.module.ts
-│   ├── users.service.ts
-│   ├── dto/
-│   │   ├── create-user.dto.ts
-│   │   └── update-role.dto.ts
-│   └── entities/
-│       └── user.entity.ts
-├── services/                 # Gestão de serviços
-│   ├── services.controller.ts
-│   ├── services.module.ts
-│   ├── services.service.ts
-│   ├── dto/
-│   │   ├── create-service.dto.ts
-│   │   └── generate-schedules.dto.ts
-│   └── entities/
-├── schedules/                # Gestão de horários
-│   ├── schedules.controller.ts
-│   ├── schedules.module.ts
-│   ├── schedules.service.ts
-│   ├── dto/
-│   │   └── create-schedule.dto.ts
-│   └── entities/
-├── appointments/             # Sistema de agendamentos
-│   ├── appointments.controller.ts
-│   ├── appointments.module.ts
-│   ├── appointments.service.ts
-│   ├── dto/
-│   │   └── create-appointment.dto.ts
-│   └── entities/
-│       └── appointment.entity.ts
-├── public/                   # Área pública (sem autenticação)
-│   ├── public.controller.ts
-│   ├── public.module.ts
-│   ├── public.service.ts
-│   └── dto/
-│       └── create-guest-appointment.dto.ts
-└── common/                   # Utilitários compartilhados
-    ├── prisma/              # Configuração do Prisma
-    │   ├── prisma.module.ts
-    │   └── prisma.service.ts
-    ├── notifications/       # Serviço de notificações
-    │   └── notification.service.ts
-    ├── decorators/          # Decorators customizados
-    │   └── roles.decorator.ts
-    ├── guards/              # Guards de autenticação
-    │   └── roles.guard.ts
-    ├── filters/             # Filtros de exceção
-    └── interceptors/        # Interceptadores
-```
-
-## 🔒 Segurança
-
-- ✅ **Helmet** para headers de segurança
-- ✅ **Rate Limiting** para prevenir spam
-- ✅ **CORS** configurado
-- ✅ **Validação** de dados com class-validator
-- ✅ **JWT** para autenticação
-- ✅ **RBAC** para controle de acesso
-- ✅ **LGPD Compliant** para integração com calendários
 
 ## 🚀 Deploy
 
-### Docker
-```bash
-docker build -t scheduling-backend .
-docker run -p 3000:3000 scheduling-backend
+### Variáveis de Ambiente para Produção
+```env
+NODE_ENV=production
+DATABASE_URL="postgresql://..."
+JWT_SECRET="secret-muito-seguro-para-producao"
+CORS_ORIGIN="https://seu-frontend.com"
 ```
 
-### Render.com
-1. Conecte seu repositório GitHub
-2. Configure as variáveis de ambiente
-3. Use os comandos:
-   - **Build**: `npm install && npm run prisma:generate && npm run build`
-   - **Start**: `npx prisma migrate deploy && npm run start:prod`
-
-### Variáveis de Produção
-- Configure `DATABASE_URL` para seu banco de produção
-- Use `JWT_SECRET` forte e único
-- Configure `CORS_ORIGIN` para seus domínios
-- Configure credenciais de email
-
-## 🤝 Contribuição
-
-1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
-5. Abra um Pull Request
+### Checklist de Deploy
+- [ ] Configurar banco PostgreSQL
+- [ ] Definir JWT_SECRET seguro
+- [ ] Configurar SMTP para emails
+- [ ] Executar migrations
+- [ ] Configurar CORS para domínio correto
+- [ ] Configurar SSL/HTTPS
+- [ ] Monitoramento e logs
 
 ## 📞 Suporte
 
-Para dúvidas ou suporte, abra uma issue no repositório.
+Para dúvidas sobre implementação ou integração com o frontend, consulte:
+- Documentação da API: `/api/docs`
+- Health check: `/health`
+- Logs do servidor para debugging
 
 ---
 
-**Desenvolvido com ❤️ usando NestJS e Clean Architecture**
+**Timelyfy Backend** - Sistema completo de agendamentos online 🗓️✨
