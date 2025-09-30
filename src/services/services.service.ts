@@ -36,12 +36,15 @@ export class ServicesService {
 
   async update(id: number, data: Partial<CreateServiceDto>) {
     await this.findOne(id);
+    
+    const updateData: any = { ...data };
+    if (data.daysOfWeek !== undefined) {
+      updateData.daysOfWeek = data.daysOfWeek;
+    }
+    
     return this.prisma.service.update({
       where: { id },
-      data: {
-        ...data,
-        daysOfWeek: data.daysOfWeek ?? ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
-      },
+      data: updateData,
     });
   }
 
