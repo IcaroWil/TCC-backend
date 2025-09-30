@@ -152,7 +152,7 @@ export class PublicService {
         userId: user.id,
         serviceId,
         scheduleId: schedule.id,
-        status: 'PENDING'
+        status: 'CONFIRMED'
       },
       include: {
         user: true,
@@ -178,7 +178,7 @@ export class PublicService {
       user: appointment.user,
       service: appointment.service,
       schedule: appointment.schedule,
-      message: 'Appointment created successfully. Check your email for confirmation.'
+      message: 'Appointment confirmed successfully. Check your email for details.'
     };
 
     if (addToCalendar) {
