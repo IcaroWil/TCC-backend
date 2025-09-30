@@ -8,7 +8,20 @@ export class ServicesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createServiceDto: CreateServiceDto) {
-    return this.prisma.service.create({ data: createServiceDto });
+    const { name, description, price, duration, interval, startTime, endTime, daysOfWeek } = createServiceDto;
+  
+    return this.prisma.service.create({
+      data: {
+        name,
+        description,
+        price,
+        duration,
+        interval,
+        startTime,
+        endTime,
+        daysOfWeek: daysOfWeek ?? ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+      },
+    });
   }
 
   async findAll() {
@@ -23,7 +36,13 @@ export class ServicesService {
 
   async update(id: number, data: Partial<CreateServiceDto>) {
     await this.findOne(id);
-    return this.prisma.service.update({ where: { id }, data });
+    return this.prisma.service.update({
+      where: { id },
+      data: {
+        ...data,
+        daysOfWeek: data.daysOfWeek ?? ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+      },
+    });
   }
 
   async remove(id: number) {
