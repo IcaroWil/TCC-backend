@@ -69,7 +69,7 @@ export class PublicService {
   }
 
   async createGuestAppointment(createGuestAppointmentDto: CreateGuestAppointmentDto) {
-    const { serviceId, scheduleId, name, email, phone, addToCalendar = false } = createGuestAppointmentDto;
+    const { serviceId, date, time, name, email, phone, addToCalendar = false } = createGuestAppointmentDto;
 
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId }
@@ -79,21 +79,46 @@ export class PublicService {
       throw new NotFoundException('Service not found');
     }
 
-    const schedule = await this.prisma.schedule.findUnique({
-      where: { id: scheduleId },
+    const appointmentDate = this.parseDateOnly(date);
+    if (!appointmentDate) {
+      throw new BadRequestException('Invalid date format. Use YYYY-MM-DD');
+    }
+
+    if (!/^([0-1]\d|2[0-3]):([0-5]\d)$/.test(time)) {
+      throw new BadRequestException('Invalid time format. Use HH:MM');
+    }
+
+    const startTime = time;
+    const endTime = this.calculateEndTime(time, service.duration || 30);
+
+    const existingSchedule = await this.prisma.schedule.findFirst({
+      where: {
+        serviceId,
+        date: appointmentDate,
+        startTime,
+        endTime
+      },
       include: { appointments: true }
     });
 
-    if (!schedule) {
-      throw new NotFoundException('Schedule not found');
-    }
-
-    if ((schedule as any).serviceId !== serviceId) {
-      throw new BadRequestException('Schedule does not belong to the specified service');
-    }
-
-    if (!(schedule as any).isAvailable || schedule.appointments.length > 0) {
-      throw new ConflictException('This time slot is no longer available');
+    let schedule;
+    if (existingSchedule) {
+      // Se já existe e tem appointment, não está disponível
+      if (existingSchedule.appointments.length > 0) {
+        throw new ConflictException('This time slot is no longer available');
+      }
+      schedule = existingSchedule;
+    } else {
+      // Criar novo schedule
+      schedule = await this.prisma.schedule.create({
+        data: {
+          serviceId,
+          date: appointmentDate,
+          startTime,
+          endTime,
+          isAvailable: true
+        }
+      });
     }
 
     let user = await this.prisma.user.findUnique({
@@ -126,7 +151,7 @@ export class PublicService {
       data: {
         userId: user.id,
         serviceId,
-        scheduleId,
+        scheduleId: schedule.id,
         status: 'PENDING'
       },
       include: {
@@ -398,5 +423,15 @@ export class PublicService {
       'END:VEVENT',
       'END:VCALENDAR'
     ].join('\r\n');
+  }
+
+  private calculateEndTime(startTime: string, durationMinutes: number): string {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    
+    const endHours = Math.floor(totalMinutes / 60);
+    const endMinutes = totalMinutes % 60;
+    
+    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
   }
 }

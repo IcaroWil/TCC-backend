@@ -9,11 +9,15 @@ export class CreateGuestAppointmentDto {
   @Type(() => Number)
   serviceId: number;
 
-  @ApiProperty({ description: 'Schedule ID' })
+  @ApiProperty({ description: 'Appointment date (YYYY-MM-DD)', example: '2024-01-15' })
   @IsNotEmpty()
-  @IsNumber()
-  @Type(() => Number)
-  scheduleId: number;
+  @IsString()
+  date: string;
+
+  @ApiProperty({ description: 'Appointment time (HH:MM)', example: '14:30' })
+  @IsNotEmpty()
+  @IsString()
+  time: string;
 
   @ApiProperty({ description: 'Customer full name' })
   @IsNotEmpty()
@@ -25,10 +29,10 @@ export class CreateGuestAppointmentDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: 'Customer phone number' })
-  @IsNotEmpty()
+  @ApiProperty({ description: 'Customer phone number', required: false })
+  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 
   @ApiProperty({ 
     description: 'Whether to add appointment to calendar', 
