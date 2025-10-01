@@ -80,14 +80,50 @@ export class SchedulesService {
             duration: true,
           }
         },
-        appointments: true 
+        appointments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+              }
+            }
+          }
+        }
       } as any,
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
     });
   }
 
   async findOne(id: number) {
-    const schedule = await this.prisma.schedule.findUnique({ where: { id } });
+    const schedule = await this.prisma.schedule.findUnique({ 
+      where: { id },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            duration: true,
+          }
+        },
+        appointments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+              }
+            }
+          }
+        }
+      }
+    });
     if (!schedule) throw new NotFoundException('Schedule not found');
     return schedule;
   }

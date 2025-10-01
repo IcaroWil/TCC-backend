@@ -1,8 +1,9 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Param, ParseIntPipe, Query, Patch } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { UpdateAppointmentStatusDto } from './dto/update-appointment-status.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 
@@ -74,6 +75,25 @@ export class AppointmentsController {
   findMany(@Request() req, @Query('take') take?: string, @Query('skip') skip?: string) {
     const user = req.user;
     return this.appointmentsService.findMany(user, Number(take ?? 50), Number(skip ?? 0));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: Number })
+  @Patch(':id')
+  async updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateData: UpdateAppointmentStatusDto
+  ) {
+    return this.appointmentsService.updateStatus(id, updateData.status);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: Number })
+  @Patch(':id/cancel')
+  async cancelAppointment(@Param('id', ParseIntPipe) id: number) {
+    return this.appointmentsService.updateStatus(id, 'CANCELED');
   }
 }
 

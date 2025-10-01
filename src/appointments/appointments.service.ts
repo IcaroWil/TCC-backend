@@ -172,4 +172,44 @@ export class AppointmentsService {
       include: { schedule: true, user: true, service: true },
     });
   }
+
+  async updateStatus(id: number, status: string) {
+    const appointment = await this.prisma.appointment.findUnique({ 
+      where: { id }, 
+      include: { schedule: true, user: true, service: true } 
+    });
+    
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    if (appointment.status === status) {
+      return { ...appointment, message: `Appointment is already ${status.toLowerCase()}` };
+    }
+
+    const updatedAppointment = await this.prisma.appointment.update({
+      where: { id },
+      data: { status },
+      include: { schedule: true, user: true, service: true },
+    });
+
+    return {
+      ...updatedAppointment,
+      message: `Appointment ${status.toLowerCase()} successfully`
+    };
+  }
+
+  async findAdminAppointments(adminId: number, take = 50, skip = 0) {
+    return this.prisma.appointment.findMany({
+      where: {
+        service: {
+          adminId: adminId
+        }
+      },
+      take,
+      skip,
+      orderBy: { createdAt: 'desc' },
+      include: { schedule: true, user: true, service: true },
+    });
+  }
 }
