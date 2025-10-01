@@ -13,6 +13,7 @@ export class NotificationService {
     const user = process.env.EMAIL_USER;
     const pass = process.env.EMAIL_PASS;
     const fromName = process.env.EMAIL_FROM_NAME;
+    const useSSL = process.env.SMTP_SSL === 'true';
 
     if (!host || !user || !pass) {
       this.transporter = null;
@@ -24,25 +25,67 @@ export class NotificationService {
           auth: { user, pass }
         });
       } else {
-        // Gmail or other SMTP - optimized for Render
-        this.transporter = nodemailer.createTransport({
-          host,
-          port,
-          secure: false,
-          auth: { user, pass },
-          connectionTimeout: 10000, // 10 seconds
-          greetingTimeout: 5000,    // 5 seconds
-          socketTimeout: 10000,     // 10 seconds
-          pool: false, // disable pooling on Render
-          tls: {
-            rejectUnauthorized: false,
-            ciphers: 'TLSv1.2'
-          },
-          // Additional options for Render
-          ignoreTLS: false,
-          requireTLS: true,
-          debug: false
-        });
+        // Check if it's Gmail and use service instead of SMTP
+        if (host === 'smtp.gmail.com' || user.includes('@gmail.com')) {
+          // Special configuration for Render
+          const isRender = process.env.RENDER === 'true';
+          
+          if (isRender) {
+            // Render-specific Gmail config - use SSL if specified
+            this.transporter = nodemailer.createTransport({
+              host: useSSL ? 'smtp.gmail.com' : undefined,
+              port: useSSL ? 465 : undefined,
+              secure: useSSL,
+              service: useSSL ? undefined : 'gmail',
+              auth: { user, pass },
+              connectionTimeout: 30000,
+              greetingTimeout: 15000,
+              socketTimeout: 30000,
+              pool: false,
+              tls: {
+                rejectUnauthorized: false
+              }
+            });
+          } else {
+            // Local development - use SSL if specified
+            this.transporter = nodemailer.createTransport({
+              host: useSSL ? 'smtp.gmail.com' : undefined,
+              port: useSSL ? 465 : undefined,
+              secure: useSSL,
+              service: useSSL ? undefined : 'gmail',
+              auth: { user, pass },
+              connectionTimeout: 15000,
+              greetingTimeout: 10000,
+              socketTimeout: 15000,
+              pool: false,
+              ...(useSSL && {
+                tls: {
+                  rejectUnauthorized: false
+                }
+              })
+            });
+          }
+        } else {
+          // Other SMTP providers
+          this.transporter = nodemailer.createTransport({
+            host,
+            port: 465, // Use SSL port
+            secure: true, // Use SSL
+            auth: { user, pass },
+            connectionTimeout: 15000, // 15 seconds
+            greetingTimeout: 10000,   // 10 seconds
+            socketTimeout: 15000,     // 15 seconds
+            pool: false,
+            tls: {
+              rejectUnauthorized: false,
+              ciphers: 'TLSv1.2'
+            },
+            // Additional options for Render
+            ignoreTLS: false,
+            requireTLS: true,
+            debug: false
+          });
+        }
       }
       this.fromAddress = `${fromName} <${user}>`;
     }
