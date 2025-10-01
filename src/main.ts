@@ -4,10 +4,27 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.use(helmet());
-  app.enableCors({ origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'], credentials: true });
+  
+  app.enableCors({ 
+    origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'], 
+    credentials: true 
+  });
+  
+  app.use(helmet({
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  }));
+  
   app.use(
     rateLimit({
       windowMs: 15 * 60 * 1000,
