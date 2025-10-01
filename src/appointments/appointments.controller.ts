@@ -93,7 +93,7 @@ export class AppointmentsController {
   @ApiParam({ name: 'id', type: Number })
   @Patch(':id/cancel')
   async cancelAppointment(@Param('id', ParseIntPipe) id: number) {
-    return this.appointmentsService.updateStatus(id, 'CANCELED');
+    return this.appointmentsService.updateStatus(id, 'CANCELLED');
   }
 }
 

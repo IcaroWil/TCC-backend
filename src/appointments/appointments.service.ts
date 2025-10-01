@@ -5,6 +5,7 @@ import { UsersService } from '../users/users.service';
 import { ServicesService } from '../services/services.service';
 import { SchedulesService } from '../schedules/schedules.service';
 import { NotificationService } from '../common/notifications/notification.service';
+import { AppointmentStatus } from '@prisma/client';
 
 @Injectable()
 export class AppointmentsService {
@@ -173,7 +174,7 @@ export class AppointmentsService {
     });
   }
 
-  async updateStatus(id: number, status: string) {
+  async updateStatus(id: number, status: AppointmentStatus) {
     const appointment = await this.prisma.appointment.findUnique({ 
       where: { id }, 
       include: { schedule: true, user: true, service: true } 
@@ -202,8 +203,8 @@ export class AppointmentsService {
   async findAdminAppointments(adminId: number, take = 50, skip = 0) {
     return this.prisma.appointment.findMany({
       where: {
-        service: {
-          adminId: adminId
+        user: {
+          role: 'ADMIN'
         }
       },
       take,

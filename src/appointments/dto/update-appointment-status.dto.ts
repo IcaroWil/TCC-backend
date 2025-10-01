@@ -1,18 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty } from 'class-validator';
-
-export enum AppointmentStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELED = 'CANCELED',
-  COMPLETED = 'COMPLETED'
-}
+import { AppointmentStatus } from '@prisma/client';
 
 export class UpdateAppointmentStatusDto {
   @ApiProperty({ 
     description: 'New appointment status',
     enum: AppointmentStatus,
-    example: 'CANCELED'
+    example: 'CANCELLED'
   })
   @IsNotEmpty()
   @IsEnum(AppointmentStatus)
