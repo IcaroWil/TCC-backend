@@ -19,13 +19,13 @@ export class NotificationService {
     } else {
       // Check if using SendGrid (common on Render)
       if (host.includes('sendgrid') || user.includes('sendgrid')) {
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = nodemailer.createTransport({
           service: 'SendGrid',
           auth: { user, pass }
         });
       } else {
         // Gmail or other SMTP
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = nodemailer.createTransport({
           host,
           port,
           secure: false, // true for 465, false for other ports
