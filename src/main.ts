@@ -8,31 +8,27 @@ import rateLimit from 'express-rate-limit';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  app.enableCors({ 
-    origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'], 
-    credentials: true 
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'],
+    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization','Accept','Origin','X-Requested-With'],
+    credentials: true,
+    optionsSuccessStatus: 200,
   });
   
   app.use(helmet({
     crossOriginEmbedderPolicy: false,
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-      },
-    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   }));
   
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: Number(process.env.RATE_LIMIT_MAX ?? 100),
-      standardHeaders: true,
-      legacyHeaders: false,
-    }),
-  );
+  app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.RATE_LIMIT_MAX ?? 100),
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS',
+  }));
+
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   
   const config = new DocumentBuilder()
