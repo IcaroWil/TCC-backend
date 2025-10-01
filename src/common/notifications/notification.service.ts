@@ -17,12 +17,27 @@ export class NotificationService {
     if (!host || !user || !pass) {
       this.transporter = null;
     } else {
-      this.transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure: false,
-        auth: { user, pass },
-      });
+      // Check if using SendGrid (common on Render)
+      if (host.includes('sendgrid') || user.includes('sendgrid')) {
+        this.transporter = nodemailer.createTransporter({
+          service: 'SendGrid',
+          auth: { user, pass }
+        });
+      } else {
+        // Gmail or other SMTP
+        this.transporter = nodemailer.createTransporter({
+          host,
+          port,
+          secure: false,
+          auth: { user, pass },
+          connectionTimeout: 60000, // 60 seconds
+          greetingTimeout: 30000,   // 30 seconds
+          socketTimeout: 60000,     // 60 seconds
+          tls: {
+            rejectUnauthorized: false
+          }
+        });
+      }
       this.fromAddress = `${fromName} <${user}>`;
     }
   }
