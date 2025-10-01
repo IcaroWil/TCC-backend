@@ -278,48 +278,48 @@ export class PublicService {
       `Obrigado por escolher nossos serviços!`;
     
     const icsAttachment = this.generateICSAttachment({ ...appointment, _overrideStart: startDateTime, _overrideEnd: endDateTime });
+    
     await this.notificationService.sendEmail(user.email, emailSubject, emailHtml, [icsAttachment]);
     
     if (user.phone) {
       await this.notificationService.sendWhatsApp(user.phone, whatsappMessage);
     }
     
-    const notifyAdmin = (process.env.ADMIN_NOTIFICATIONS_ENABLED ?? 'true') !== 'false';
-    if (notifyAdmin) {
-      const adminSubject = `Novo Agendamento - ${service.name}`;
-      const adminHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <h2 style="color: #333; text-align: center; margin-bottom: 30px;">📅 Novo Agendamento Recebido</h2>
-          
-          <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
-            <h3 style="color: #1976d2; margin-top: 0;">Informações do Cliente</h3>
-            <p><strong>Nome:</strong> ${user.name}</p>
-            <p><strong>Email:</strong> <a href="mailto:${user.email}" style="color: #1976d2;">${user.email}</a></p>
-            <p><strong>Telefone:</strong> <a href="tel:${user.phone || ''}" style="color: #1976d2;">${user.phone || 'N/A'}</a></p>
-          </div>
-          
-          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h3 style="color: #495057; margin-top: 0;">Detalhes do Agendamento</h3>
-            <p><strong>Serviço:</strong> ${service.name}</p>
-            <p><strong>Descrição:</strong> ${service.description || 'N/A'}</p>
-            <p><strong>Preço:</strong> R$ ${service.price.toFixed(2)}</p>
-            <p><strong>Data:</strong> ${formattedDate}</p>
-            <p><strong>Horário:</strong> ${formattedTime}</p>
-          </div>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <p style="color: #666; font-size: 14px;">Agendamento criado em ${new Date().toLocaleString('pt-BR')}</p>
-          </div>
+    // Always send admin notification when appointment is CONFIRMED
+    const adminSubject = `Novo Agendamento - ${service.name}`;
+    const adminHtml = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+      <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2 style="color: #333; text-align: center; margin-bottom: 30px;">📅 Novo Agendamento Recebido</h2>
+        
+        <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
+          <h3 style="color: #1976d2; margin-top: 0;">Informações do Cliente</h3>
+          <p><strong>Nome:</strong> ${user.name}</p>
+          <p><strong>Email:</strong> <a href="mailto:${user.email}" style="color: #1976d2;">${user.email}</a></p>
+          <p><strong>Telefone:</strong> <a href="tel:${user.phone || ''}" style="color: #1976d2;">${user.phone || 'N/A'}</a></p>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h3 style="color: #495057; margin-top: 0;">Detalhes do Agendamento</h3>
+          <p><strong>Serviço:</strong> ${service.name}</p>
+          <p><strong>Descrição:</strong> ${service.description || 'N/A'}</p>
+          <p><strong>Preço:</strong> R$ ${service.price.toFixed(2)}</p>
+          <p><strong>Data:</strong> ${formattedDate}</p>
+          <p><strong>Horário:</strong> ${formattedTime}</p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <p style="color: #666; font-size: 14px;">Agendamento criado em ${new Date().toLocaleString('pt-BR')}</p>
         </div>
       </div>
-    `;
-      const admins = await this.prisma.user.findMany({ where: { role: 'ADMIN' }, select: { email: true } });
-      for (const a of admins) {
-        if (a.email) {
-          await this.notificationService.sendEmail(a.email, adminSubject, adminHtml);
-        }
-      }
+    </div>
+  `;
+    
+    // Get admin email from environment variable
+    const adminEmail = process.env.EMAIL_USER;
+    
+    if (adminEmail) {
+      await this.notificationService.sendEmail(adminEmail, adminSubject, adminHtml);
     }
   }
 
