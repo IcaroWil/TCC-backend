@@ -161,12 +161,7 @@ export class PublicService {
       }
     });
 
-    try {
-      await this.sendAppointmentNotifications(appointment, addToCalendar);
-    } catch (error) {
-      console.error('Notification failed:', error);
-    }
-
+    // Return response immediately
     const response: any = {
       id: appointment.id,
       userId: appointment.userId,
@@ -185,6 +180,11 @@ export class PublicService {
       response.calendarUrl = this.generateCalendarUrl(appointment);
       response.calendarDirect = true;
     }
+
+    // Send notifications in background (don't wait)
+    this.sendAppointmentNotifications(appointment, addToCalendar).catch(error => {
+      console.error('Background notification failed:', error);
+    });
 
     return response;
   }

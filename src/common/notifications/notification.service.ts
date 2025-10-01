@@ -24,22 +24,24 @@ export class NotificationService {
           auth: { user, pass }
         });
       } else {
-        // Gmail or other SMTP
+        // Gmail or other SMTP - optimized for Render
         this.transporter = nodemailer.createTransport({
           host,
           port,
-          secure: false, // true for 465, false for other ports
+          secure: false,
           auth: { user, pass },
-          connectionTimeout: 60000, // 60 seconds
-          greetingTimeout: 30000,   // 30 seconds
-          socketTimeout: 60000,     // 60 seconds
-          pool: true, // use pooled connections
-          maxConnections: 1, // limit to 1 connection
-          maxMessages: 3, // limit to 3 messages per connection
+          connectionTimeout: 10000, // 10 seconds
+          greetingTimeout: 5000,    // 5 seconds
+          socketTimeout: 10000,     // 10 seconds
+          pool: false, // disable pooling on Render
           tls: {
             rejectUnauthorized: false,
-            ciphers: 'SSLv3'
-          }
+            ciphers: 'TLSv1.2'
+          },
+          // Additional options for Render
+          ignoreTLS: false,
+          requireTLS: true,
+          debug: false
         });
       }
       this.fromAddress = `${fromName} <${user}>`;
