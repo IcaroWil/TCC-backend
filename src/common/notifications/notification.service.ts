@@ -28,13 +28,17 @@ export class NotificationService {
         this.transporter = nodemailer.createTransporter({
           host,
           port,
-          secure: false,
+          secure: false, // true for 465, false for other ports
           auth: { user, pass },
           connectionTimeout: 60000, // 60 seconds
           greetingTimeout: 30000,   // 30 seconds
           socketTimeout: 60000,     // 60 seconds
+          pool: true, // use pooled connections
+          maxConnections: 1, // limit to 1 connection
+          maxMessages: 3, // limit to 3 messages per connection
           tls: {
-            rejectUnauthorized: false
+            rejectUnauthorized: false,
+            ciphers: 'SSLv3'
           }
         });
       }
@@ -44,8 +48,19 @@ export class NotificationService {
 
   async sendEmail(to: string, subject: string, html: string, attachments?: Array<{ filename: string; content: string | Buffer; contentType?: string }>) {
     try {
-      if (!this.transporter || !to) return;
-      await this.transporter.sendMail({ 
+      console.log('📧 Attempting to send email...');
+      console.log('📧 To:', to);
+      console.log('📧 Subject:', subject);
+      console.log('📧 Transporter available:', !!this.transporter);
+      console.log('📧 SMTP Host:', process.env.SMTP_HOST);
+      console.log('📧 SMTP Port:', process.env.SMTP_PORT);
+      
+      if (!this.transporter || !to) {
+        console.log('❌ Email not sent - transporter or recipient missing');
+        return;
+      }
+      
+      const result = await this.transporter.sendMail({ 
         from: this.fromAddress || process.env.EMAIL_USER, 
         to, 
         subject, 
@@ -53,8 +68,11 @@ export class NotificationService {
         text: html.replace(/<[^>]*>/g, ''),
         attachments
       });
+      
+      console.log('✅ Email sent successfully:', result.messageId);
     } catch (err) {
-      console.error('Email notification failed:', (err as Error).message);
+      console.error('❌ Email notification failed:', (err as Error).message);
+      console.error('❌ Full error:', err);
     }
   }
 
