@@ -29,12 +29,9 @@ export class AuthService {
   }
 
   async register(email: string, password: string, role?: 'ADMIN' | 'CUSTOMER', adminInviteCode?: string) {
-    const existing = await this.usersService.findByEmail(email);
-    if (existing) {
-      throw new UnauthorizedException('Email already registered');
-    }
     const name = email.split('@')[0];
     let finalRole: 'ADMIN' | 'CUSTOMER' = 'CUSTOMER';
+    
     if (role === 'ADMIN') {
       if (!process.env.ADMIN_INVITE_CODE) {
         throw new UnauthorizedException('Server not configured with ADMIN_INVITE_CODE');
@@ -46,6 +43,11 @@ export class AuthService {
         throw new UnauthorizedException('Invalid admin invite code');
       }
       finalRole = 'ADMIN';
+    }
+
+    const existingUserWithSameRole = await this.usersService.findByEmailAndRole(email, finalRole);
+    if (existingUserWithSameRole) {
+      throw new UnauthorizedException(`Email already registered as ${finalRole}`);
     }
     const dto: CreateUserDto = { email, password, name };
     const user = await this.usersService.create(dto);
