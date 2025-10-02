@@ -36,8 +36,13 @@ export class AuthService {
     const name = email.split('@')[0];
     let finalRole: 'ADMIN' | 'CUSTOMER' = 'CUSTOMER';
     if (role === 'ADMIN') {
-      // Segurança: exigir um código de convite para criar ADMIN via front
-      if (!adminInviteCode || adminInviteCode !== process.env.ADMIN_INVITE_CODE) {
+      if (!process.env.ADMIN_INVITE_CODE) {
+        throw new UnauthorizedException('Server not configured with ADMIN_INVITE_CODE');
+      }
+      if (!adminInviteCode) {
+        throw new UnauthorizedException('Admin invite code is required for ADMIN role');
+      }
+      if (adminInviteCode !== process.env.ADMIN_INVITE_CODE) {
         throw new UnauthorizedException('Invalid admin invite code');
       }
       finalRole = 'ADMIN';
