@@ -10,7 +10,7 @@ export class ServicesService {
   async create(createServiceDto: CreateServiceDto) {
     const { name, description, price, duration, interval, startTime, endTime, daysOfWeek } = createServiceDto;
   
-    return this.prisma.service.create({
+    return (this.prisma as any).service.create({
       data: {
         name,
         description,
@@ -25,11 +25,11 @@ export class ServicesService {
   }
 
   async findAll() {
-    return this.prisma.service.findMany();
+    return (this.prisma as any).service.findMany();
   }
 
   async findOne(id: number) {
-    const service = await this.prisma.service.findUnique({ where: { id } });
+    const service = await (this.prisma as any).service.findUnique({ where: { id } });
     if (!service) throw new NotFoundException('Service not found');
     return service;
   }
@@ -42,7 +42,7 @@ export class ServicesService {
       updateData.daysOfWeek = data.daysOfWeek;
     }
     
-    return this.prisma.service.update({
+    return (this.prisma as any).service.update({
       where: { id },
       data: updateData,
     });
@@ -50,7 +50,19 @@ export class ServicesService {
 
   async remove(id: number) {
     await this.findOne(id);
-    return this.prisma.service.delete({ where: { id } });
+    
+    // First, delete all appointments related to this service
+    await (this.prisma as any).appointment.deleteMany({
+      where: { serviceId: id }
+    });
+    
+    // Then, delete all schedules related to this service
+    await (this.prisma as any).schedule.deleteMany({
+      where: { serviceId: id }
+    });
+    
+    // Finally, delete the service
+    return (this.prisma as any).service.delete({ where: { id } });
   }
 
   async generateSchedules(serviceId: number, generateSchedulesDto: GenerateSchedulesDto) {
@@ -95,7 +107,7 @@ export class ServicesService {
     for (const schedule of schedules) {
       try {
         
-        const existing = await this.prisma.schedule.findFirst({
+        const existing = await (this.prisma as any).schedule.findFirst({
           where: {
             serviceId: (schedule as any).serviceId,
             date: (schedule as any).date,
@@ -104,13 +116,13 @@ export class ServicesService {
         });
 
         if (!existing) {
-          const created = await this.prisma.schedule.create({
+          const created = await (this.prisma as any).schedule.create({
             data: schedule as any
           });
           createdSchedules.push(created);
         } else {
           
-          const updated = await this.prisma.schedule.update({
+          const updated = await (this.prisma as any).schedule.update({
             where: { id: existing.id },
             data: {
               endTime: (schedule as any).endTime,
