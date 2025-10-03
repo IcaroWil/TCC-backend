@@ -12,7 +12,7 @@ export class PublicService {
   ) {}
 
   async getServices() {
-    return this.prisma.service.findMany({
+    return (this.prisma as any).service.findMany({
       select: {
         id: true,
         name: true,
@@ -25,7 +25,7 @@ export class PublicService {
   }
 
   async getServiceSchedules(serviceId: number, date?: string, available?: boolean) {
-    const service = await this.prisma.service.findUnique({
+    const service = await (this.prisma as any).service.findUnique({
       where: { id: serviceId }
     });
 
@@ -50,7 +50,7 @@ export class PublicService {
       where.appointments = { none: {} };
     }
 
-    return this.prisma.schedule.findMany({
+    return (this.prisma as any).schedule.findMany({
       where,
       include: {
         service: {
@@ -71,7 +71,7 @@ export class PublicService {
   async createGuestAppointment(createGuestAppointmentDto: CreateGuestAppointmentDto) {
     const { serviceId, date, time, name, email, phone, addToCalendar = false } = createGuestAppointmentDto;
 
-    const service = await this.prisma.service.findUnique({
+    const service = await (this.prisma as any).service.findUnique({
       where: { id: serviceId }
     });
 
@@ -91,7 +91,7 @@ export class PublicService {
     const startTime = time;
     const endTime = this.calculateEndTime(time, service.duration || 30);
 
-    const existingSchedule = await this.prisma.schedule.findFirst({
+    const existingSchedule = await (this.prisma as any).schedule.findFirst({
       where: {
         serviceId,
         date: appointmentDate,
@@ -110,7 +110,7 @@ export class PublicService {
       schedule = existingSchedule;
     } else {
       // Criar novo schedule
-      schedule = await this.prisma.schedule.create({
+      schedule = await (this.prisma as any).schedule.create({
         data: {
           serviceId,
           date: appointmentDate,
@@ -121,7 +121,7 @@ export class PublicService {
       });
     }
 
-    let user = await this.prisma.user.findUnique({
+    let user = await (this.prisma as any).user.findUnique({
       where: { email }
     });
 
@@ -129,7 +129,7 @@ export class PublicService {
       const randomPassword = Math.random().toString(36).slice(-8);
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
       
-      user = await this.prisma.user.create({
+      user = await (this.prisma as any).user.create({
         data: {
           email,
           password: hashedPassword,
@@ -143,11 +143,11 @@ export class PublicService {
       if (name && user.name !== name) updateData.name = name;
       if (phone && user.phone !== phone) updateData.phone = phone;
       if (Object.keys(updateData).length > 0) {
-        user = await this.prisma.user.update({ where: { id: user.id }, data: updateData });
+        user = await (this.prisma as any).user.update({ where: { id: user.id }, data: updateData });
       }
     }
 
-    const appointment = await this.prisma.appointment.create({
+    const appointment = await (this.prisma as any).appointment.create({
       data: {
         userId: user.id,
         serviceId,
@@ -213,26 +213,27 @@ export class PublicService {
     const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
     const [endHour, endMinute] = schedule.endTime.split(':').map(Number);
     
-    const startDateTime = new Date(Date.UTC(
-      dateOnly.getUTCFullYear(),
-      dateOnly.getUTCMonth(),
-      dateOnly.getUTCDate(),
+    // Create dates in local timezone to avoid timezone conversion issues
+    const startDateTime = new Date(
+      dateOnly.getFullYear(),
+      dateOnly.getMonth(),
+      dateOnly.getDate(),
       startHour,
       startMinute,
       0,
-      0,
-    ));
-    const endDateTime = new Date(Date.UTC(
-      dateOnly.getUTCFullYear(),
-      dateOnly.getUTCMonth(),
-      dateOnly.getUTCDate(),
+      0
+    );
+    const endDateTime = new Date(
+      dateOnly.getFullYear(),
+      dateOnly.getMonth(),
+      dateOnly.getDate(),
       endHour,
       endMinute,
       0,
-      0,
-    ));
+      0
+    );
     
-    const formattedDate = `${String(dateOnly.getUTCDate()).padStart(2,'0')}/${String(dateOnly.getUTCMonth()+1).padStart(2,'0')}/${dateOnly.getUTCFullYear()}`;
+    const formattedDate = `${String(dateOnly.getDate()).padStart(2,'0')}/${String(dateOnly.getMonth()+1).padStart(2,'0')}/${dateOnly.getFullYear()}`;
     const formattedTime = `${schedule.startTime} - ${schedule.endTime}`;
     
     const emailSubject = `Confirmação de Agendamento - ${service.name}`;

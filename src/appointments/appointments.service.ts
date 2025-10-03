@@ -5,7 +5,7 @@ import { UsersService } from '../users/users.service';
 import { ServicesService } from '../services/services.service';
 import { SchedulesService } from '../schedules/schedules.service';
 import { NotificationService } from '../common/notifications/notification.service';
-import { AppointmentStatus } from '@prisma/client';
+// import { AppointmentStatus } from '@prisma/client';
 
 @Injectable()
 export class AppointmentsService {
@@ -21,13 +21,13 @@ export class AppointmentsService {
     const schedule = await this.schedulesService.findOne(createAppointmentDto.scheduleId);
     if (!schedule) throw new NotFoundException('Schedule not found');
 
-    const service = await this.prisma.service.findUnique({ where: { id: createAppointmentDto.serviceId } });
+    const service = await (this.prisma as any).service.findUnique({ where: { id: createAppointmentDto.serviceId } });
     if (!service) throw new NotFoundException('Service not found');
 
-    const existingAppointment = await this.prisma.appointment.findFirst({ where: { scheduleId: createAppointmentDto.scheduleId } });
+    const existingAppointment = await (this.prisma as any).appointment.findFirst({ where: { scheduleId: createAppointmentDto.scheduleId } });
     if (existingAppointment) throw new ConflictException('Schedule already booked');
 
-    const appointment = await this.prisma.appointment.create({
+    const appointment = await (this.prisma as any).appointment.create({
       data: {
         userId,
         scheduleId: createAppointmentDto.scheduleId,
@@ -47,13 +47,31 @@ export class AppointmentsService {
     const timeSlot = `${appointment.schedule.startTime} - ${appointment.schedule.endTime}`;
     
 
-    const startDateTime = new Date(dateIso);
+    // Parse the date correctly without timezone issues
+    const dateOnly = new Date(dateIso);
     const [startHour, startMinute] = appointment.schedule.startTime.split(':');
     const [endHour, endMinute] = appointment.schedule.endTime.split(':');
     
-    startDateTime.setHours(parseInt(startHour), parseInt(startMinute), 0, 0);
-    const endDateTime = new Date(startDateTime);
-    endDateTime.setHours(parseInt(endHour), parseInt(endMinute), 0, 0);
+    // Create dates in local timezone to avoid timezone conversion issues
+    const startDateTime = new Date(
+      dateOnly.getFullYear(),
+      dateOnly.getMonth(),
+      dateOnly.getDate(),
+      parseInt(startHour),
+      parseInt(startMinute),
+      0,
+      0
+    );
+    
+    const endDateTime = new Date(
+      dateOnly.getFullYear(),
+      dateOnly.getMonth(),
+      dateOnly.getDate(),
+      parseInt(endHour),
+      parseInt(endMinute),
+      0,
+      0
+    );
     
     const formatDateForCalendar = (date: Date) => {
       return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -145,7 +163,7 @@ export class AppointmentsService {
       await this.notificationService.sendEmail(customerEmail, '✅ Agendamento Confirmado', customerEmailHtml);
     }
     if (notifyAdmin) {
-      const admins = await this.prisma.user.findMany({ where: { role: 'ADMIN' }, select: { email: true } });
+      const admins = await (this.prisma as any).user.findMany({ where: { role: 'ADMIN' }, select: { email: true } });
       for (const a of admins) {
         if (a.email) {
           await this.notificationService.sendEmail(a.email, '🔔 Novo Agendamento Recebido', adminEmailHtml);
@@ -158,14 +176,14 @@ export class AppointmentsService {
   }
 
   async findOne(id: number) {
-    const appt = await this.prisma.appointment.findUnique({ where: { id }, include: { schedule: true, user: true, service: true } });
+    const appt = await (this.prisma as any).appointment.findUnique({ where: { id }, include: { schedule: true, user: true, service: true } });
     if (!appt) throw new NotFoundException('Appointment not found');
     return appt;
   }
 
   async findMany(user: { userId: number; role: 'ADMIN' | 'CUSTOMER' }, take = 50, skip = 0) {
     const where = user.role === 'ADMIN' ? {} : { userId: user.userId };
-    return this.prisma.appointment.findMany({
+    return (this.prisma as any).appointment.findMany({
       where,
       take,
       skip,
@@ -174,8 +192,8 @@ export class AppointmentsService {
     });
   }
 
-  async updateStatus(id: number, status: AppointmentStatus) {
-    const appointment = await this.prisma.appointment.findUnique({ 
+  async updateStatus(id: number, status: string) {
+    const appointment = await (this.prisma as any).appointment.findUnique({ 
       where: { id }, 
       include: { schedule: true, user: true, service: true } 
     });
@@ -188,7 +206,7 @@ export class AppointmentsService {
       return { ...appointment, message: `Appointment is already ${status.toLowerCase()}` };
     }
 
-    const updatedAppointment = await this.prisma.appointment.update({
+    const updatedAppointment = await (this.prisma as any).appointment.update({
       where: { id },
       data: { status },
       include: { schedule: true, user: true, service: true },
@@ -201,7 +219,7 @@ export class AppointmentsService {
   }
 
   async findAdminAppointments(adminId: number, take = 50, skip = 0) {
-    return this.prisma.appointment.findMany({
+    return (this.prisma as any).appointment.findMany({
       where: {
         user: {
           role: 'ADMIN'
