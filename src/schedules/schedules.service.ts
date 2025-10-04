@@ -33,9 +33,9 @@ export class SchedulesService {
 
   async create(createScheduleDto: CreateScheduleDto) {
     if (!/^([0-1]\d|2[0-3]):([0-5]\d)$/.test(createScheduleDto.startTime) || !/^([0-1]\d|2[0-3]):([0-5]\d)$/.test(createScheduleDto.endTime)) {
-      throw new BadRequestException('Invalid time format, expected HH:mm');
+      throw new BadRequestException('Formato de horário inválido, esperado HH:mm');
     }
-    return this.prisma.schedule.create({
+    return (this.prisma as any).schedule.create({
       data: {
         serviceId: createScheduleDto.serviceId,
         date: new Date(createScheduleDto.date),
@@ -56,7 +56,7 @@ export class SchedulesService {
     if (filter?.date) {
       const day = parseDateOnly(filter.date);
       if (!day) {
-        throw new BadRequestException('Invalid date. Use YYYY-MM-DD, DD/MM/YYYY, or ISO date.');
+        throw new BadRequestException('Data inválida. Use YYYY-MM-DD, DD/MM/YYYY, ou data ISO.');
       }
       const next = new Date(day);
       next.setDate(next.getDate() + 1);
@@ -68,7 +68,7 @@ export class SchedulesService {
       where.appointments = { none: {} };
     }
     
-    return this.prisma.schedule.findMany({
+    return (this.prisma as any).schedule.findMany({
       where,
       include: { 
         service: {
@@ -98,7 +98,7 @@ export class SchedulesService {
   }
 
   async findOne(id: number) {
-    const schedule = await this.prisma.schedule.findUnique({ 
+    const schedule = await (this.prisma as any).schedule.findUnique({ 
       where: { id },
       include: {
         service: {
@@ -124,13 +124,13 @@ export class SchedulesService {
         }
       }
     });
-    if (!schedule) throw new NotFoundException('Schedule not found');
+    if (!schedule) throw new NotFoundException('Horário não encontrado');
     return schedule;
   }
 
   async update(id: number, data: Partial<CreateScheduleDto>) {
     await this.findOne(id);
-    return this.prisma.schedule.update({
+    return (this.prisma as any).schedule.update({
       where: { id },
       data: {
         ...(data.date ? { date: new Date(data.date) } : {}),
@@ -142,6 +142,6 @@ export class SchedulesService {
 
   async remove(id: number) {
     await this.findOne(id);
-    return this.prisma.schedule.delete({ where: { id } });
+    return (this.prisma as any).schedule.delete({ where: { id } });
   }
 }

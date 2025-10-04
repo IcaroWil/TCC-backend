@@ -30,7 +30,7 @@ export class PublicService {
     });
 
     if (!service) {
-      throw new NotFoundException('Service not found');
+      throw new NotFoundException('Serviço não encontrado');
     }
 
     const where: any = { serviceId };
@@ -38,7 +38,7 @@ export class PublicService {
     if (date) {
       const day = this.parseDateOnly(date);
       if (!day) {
-        throw new BadRequestException('Invalid date. Use YYYY-MM-DD format.');
+        throw new BadRequestException('Data inválida. Use formato YYYY-MM-DD.');
       }
       const next = new Date(day);
       next.setDate(next.getDate() + 1);
@@ -76,16 +76,16 @@ export class PublicService {
     });
 
     if (!service) {
-      throw new NotFoundException('Service not found');
+      throw new NotFoundException('Serviço não encontrado');
     }
 
     const appointmentDate = this.parseDateOnly(date);
     if (!appointmentDate) {
-      throw new BadRequestException('Invalid date format. Use YYYY-MM-DD');
+      throw new BadRequestException('Formato de data inválido. Use YYYY-MM-DD');
     }
 
     if (!/^([0-1]\d|2[0-3]):([0-5]\d)$/.test(time)) {
-      throw new BadRequestException('Invalid time format. Use HH:MM');
+      throw new BadRequestException('Formato de horário inválido. Use HH:MM');
     }
 
     const startTime = time;
@@ -105,7 +105,7 @@ export class PublicService {
     if (existingSchedule) {
       // Se já existe e tem appointment, não está disponível
       if (existingSchedule.appointments.length > 0) {
-        throw new ConflictException('This time slot is no longer available');
+        throw new ConflictException('Este horário não está mais disponível');
       }
       schedule = existingSchedule;
     } else {

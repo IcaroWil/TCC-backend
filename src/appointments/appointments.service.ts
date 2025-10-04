@@ -19,13 +19,13 @@ export class AppointmentsService {
 
   async create(userId: number, createAppointmentDto: CreateAppointmentDto) {
     const schedule = await this.schedulesService.findOne(createAppointmentDto.scheduleId);
-    if (!schedule) throw new NotFoundException('Schedule not found');
+    if (!schedule) throw new NotFoundException('Horário não encontrado');
 
     const service = await (this.prisma as any).service.findUnique({ where: { id: createAppointmentDto.serviceId } });
-    if (!service) throw new NotFoundException('Service not found');
+    if (!service) throw new NotFoundException('Serviço não encontrado');
 
     const existingAppointment = await (this.prisma as any).appointment.findFirst({ where: { scheduleId: createAppointmentDto.scheduleId } });
-    if (existingAppointment) throw new ConflictException('Schedule already booked');
+    if (existingAppointment) throw new ConflictException('Este horário já está reservado');
 
     const appointment = await (this.prisma as any).appointment.create({
       data: {
@@ -177,7 +177,7 @@ export class AppointmentsService {
 
   async findOne(id: number) {
     const appt = await (this.prisma as any).appointment.findUnique({ where: { id }, include: { schedule: true, user: true, service: true } });
-    if (!appt) throw new NotFoundException('Appointment not found');
+    if (!appt) throw new NotFoundException('Agendamento não encontrado');
     return appt;
   }
 
@@ -199,11 +199,11 @@ export class AppointmentsService {
     });
     
     if (!appointment) {
-      throw new NotFoundException('Appointment not found');
+      throw new NotFoundException('Agendamento não encontrado');
     }
 
     if (appointment.status === status) {
-      return { ...appointment, message: `Appointment is already ${status.toLowerCase()}` };
+      return { ...appointment, message: `Agendamento já está ${status.toLowerCase() === 'cancelled' ? 'cancelado' : status.toLowerCase()}` };
     }
 
     const updatedAppointment = await (this.prisma as any).appointment.update({
@@ -212,9 +212,16 @@ export class AppointmentsService {
       include: { schedule: true, user: true, service: true },
     });
 
+    // Send cancellation email if status is CANCELLED
+    if (status === 'CANCELLED') {
+      this.sendCancellationEmail(updatedAppointment).catch(error => {
+        console.error('Falha ao enviar email de cancelamento:', error);
+      });
+    }
+
     return {
       ...updatedAppointment,
-      message: `Appointment ${status.toLowerCase()} successfully`
+      message: `Agendamento ${status.toLowerCase() === 'cancelled' ? 'cancelado' : status.toLowerCase()} com sucesso`
     };
   }
 
@@ -230,5 +237,70 @@ export class AppointmentsService {
       orderBy: { createdAt: 'desc' },
       include: { schedule: true, user: true, service: true },
     });
+  }
+
+  private async sendCancellationEmail(appointment: any) {
+    const { user, service, schedule } = appointment;
+    
+    // Parse date correctly without timezone issues
+    const dateOnly = new Date(schedule.date);
+    const formattedDate = `${String(dateOnly.getDate()).padStart(2,'0')}/${String(dateOnly.getMonth()+1).padStart(2,'0')}/${dateOnly.getFullYear()}`;
+    const formattedTime = `${schedule.startTime} - ${schedule.endTime}`;
+    
+    const emailSubject = `❌ Agendamento Cancelado - ${service.name}`;
+    
+    const cancellationEmailHtml = `
+      <div style="font-family: Arial, Helvetica, sans-serif; max-width: 640px; margin: 0 auto; background:#f4f6f8; padding:24px;">
+        <div style="background:#dc3545; color:#fff; border-radius:12px 12px 0 0; padding:20px 24px; font-weight:bold; font-size:20px;">
+          ❌ Agendamento Cancelado
+        </div>
+        <div style="background:#fff; border-radius:0 0 12px 12px; box-shadow:0 2px 12px rgba(0,0,0,.06); padding:0 24px 24px;">
+          <div style="padding-top:16px; font-size:16px; color:#1f2937;">Olá <strong>${user.name}</strong>!</div>
+          <div style="color:#4b5563; margin-bottom:18px;">Infelizmente, seu agendamento foi cancelado:</div>
+
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:16px 18px; margin-bottom:22px;">
+            <div style="color:#dc2626; font-weight:700; margin-bottom:10px;">📅 Detalhes do Agendamento Cancelado</div>
+            <div style="margin:6px 0; color:#111827;"><strong>Serviço:</strong> ${service.name}</div>
+            <div style="margin:2px 0; color:#6b7280; font-style:italic;">${service.description || ''}</div>
+            <div style="margin:6px 0;"><strong style="color:#dc2626;">Data:</strong> <span style="color:#dc2626; font-weight:700;">${formattedDate}</span></div>
+            <div style="margin:6px 0;"><strong style="color:#dc2626;">Horário:</strong> <span style="color:#dc2626; font-weight:700;">${formattedTime}</span></div>
+            <div style="margin:6px 0;"><strong>Valor:</strong> R$ ${service.price.toFixed(2)}</div>
+          </div>
+
+          <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:18px; margin-bottom:22px;">
+            <div style="color:#0369a1; font-weight:700; margin-bottom:12px;">ℹ️ Informações Importantes</div>
+            <div style="color:#0c4a6e; font-size:14px; line-height:1.5;">
+              • Entre em contato conosco para reagendar seu serviço<br/>
+              • Não há cobrança pelo agendamento cancelado<br/>
+              • Estamos disponíveis para esclarecer qualquer dúvida
+            </div>
+          </div>
+
+          <div style="text-align:center; color:#6b7280; font-size:14px; padding-top:8px;">
+            Pedimos desculpas pelo inconveniente.<br/>
+            Entre em contato conosco para reagendar.
+          </div>
+        </div>
+      </div>
+    `;
+    
+    const whatsappMessage = `❌ *Agendamento Cancelado*\n\n` +
+      `Olá ${user.name}!\n\n` +
+      `Infelizmente, seu agendamento foi cancelado:\n\n` +
+      `📋 *Serviço:* ${service.name}\n` +
+      `📝 *Descrição:* ${service.description || 'N/A'}\n` +
+      `💰 *Preço:* R$ ${service.price.toFixed(2)}\n` +
+      `📅 *Data:* ${formattedDate}\n` +
+      `⏰ *Horário:* ${formattedTime}\n\n` +
+      `Entre em contato conosco para reagendar seu serviço.\n` +
+      `Pedimos desculpas pelo inconveniente.`;
+    
+    // Send email notification
+    await this.notificationService.sendEmail(user.email, emailSubject, cancellationEmailHtml);
+    
+    // Send WhatsApp notification if phone is available
+    if (user.phone) {
+      await this.notificationService.sendWhatsApp(user.phone, whatsappMessage);
+    }
   }
 }

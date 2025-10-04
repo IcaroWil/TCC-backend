@@ -88,8 +88,9 @@ export class AppointmentsController {
     return this.appointmentsService.updateStatus(id, updateData.status);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
+  @Roles('ADMIN')
   @ApiParam({ name: 'id', type: Number })
   @Patch(':id/cancel')
   async cancelAppointment(@Param('id', ParseIntPipe) id: number) {

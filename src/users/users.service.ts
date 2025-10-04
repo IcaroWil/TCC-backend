@@ -8,14 +8,14 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const existingUser = await this.prisma.user.findUnique({
+    const existingUser = await (this.prisma as any).user.findUnique({
       where: { email: createUserDto.email },
     });
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('Email já cadastrado');
     }
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    return this.prisma.user.create({
+    return (this.prisma as any).user.create({
       data: {
         email: createUserDto.email,
         password: hashedPassword,
@@ -27,13 +27,13 @@ export class UsersService {
   }
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+    return (this.prisma as any).user.findUnique({ where: { email } });
   }
 
   async findByEmailAndRole(email: string, role: 'ADMIN' | 'CUSTOMER') {
-    return this.prisma.user.findFirst({ 
+    return (this.prisma as any).user.findFirst({ 
       where: { 
-        email,
+        email, 
         role 
       } 
     });
@@ -41,22 +41,22 @@ export class UsersService {
 
 
   async findById(id: number) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('User  not found');
+    const user = await (this.prisma as any).user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
     return user;
   }
 
   async findAll() {
-    return this.prisma.user.findMany();
+    return (this.prisma as any).user.findMany();
   }
 
   async updateRole(id: number, role: 'ADMIN' | 'CUSTOMER') {
     await this.findById(id);
-    return this.prisma.user.update({ where: { id }, data: { role } });
+    return (this.prisma as any).user.update({ where: { id }, data: { role } });
   }
 
   async remove(id: number) {
     await this.findById(id);
-    return this.prisma.user.delete({ where: { id } });
+    return (this.prisma as any).user.delete({ where: { id } });
   }
 }

@@ -30,7 +30,7 @@ export class ServicesService {
 
   async findOne(id: number) {
     const service = await (this.prisma as any).service.findUnique({ where: { id } });
-    if (!service) throw new NotFoundException('Service not found');
+    if (!service) throw new NotFoundException('Serviço não encontrado');
     return service;
   }
 
@@ -75,11 +75,11 @@ export class ServicesService {
     const end = this.timeToMinutes(endTime);
     
     if (start >= end) {
-      throw new BadRequestException('Start time must be before end time');
+      throw new BadRequestException('Horário de início deve ser antes do horário de fim');
     }
     
     if (duration > (end - start)) {
-      throw new BadRequestException('Duration cannot be greater than the time range');
+      throw new BadRequestException('Duração não pode ser maior que o intervalo de tempo');
     }
     
     const schedules: any[] = [];
